@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uptime Monitor - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-910 text-slate-200 font-sans antialiased" style="background-color: #0f172a;">
+
+<nav class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                    <i class="fa-solid fa-server text-xl animate-pulse"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                        UptimeMonitor
+                    </span>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-xs text-slate-400">Giriş Yapıldı</p>
+                    <p class="text-sm font-medium text-slate-200">
+                        <span sec:authentication="name">Kullanıcı</span>
+                        <span class="text-xs bg-slate-800 px-2 py-0.5 rounded text-emerald-400 font-mono ml-1" sec:authorize="hasRole('ADMIN')">ADMIN</span>
+                        <span class="text-xs bg-slate-800 px-2 py-0.5 rounded text-blue-400 font-mono ml-1" sec:authorize="hasRole('USER')">USER</span>
+                    </p>
+                </div>
+                <form th:action="@{/logout}" method="POST">
+                    <button type="submit" class="flex items-center gap-2 bg-slate-800 hover:bg-rose-950/40 hover:text-rose-400 px-3 py-2 rounded-lg text-sm font-medium transition-all border border-slate-700">
+                        <i class="fa-solid fa-right-from-bracket"></i> Çıkış
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-100">İzlenen Web Siteleri</h1>
+            <p class="text-sm text-slate-400 mt-1">Sistemlerin anlık uptime ve performans durumları.</p>
+        </div>
+
+        <div sec:authorize="hasRole('ADMIN')">
+            <button onclick="toggleModal('addModal')" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-lg">
+                <i class="fa-solid fa-plus"></i> Yeni Web Sitesi Ekle
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden backdrop-blur">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                <tr class="border-b border-slate-800 bg-slate-900/80 text-xs font-semibold uppercase text-slate-400">
+                    <th class="px-6 py-4">ID</th>
+                    <th class="px-6 py-4">Site Adı</th>
+                    <th class="px-6 py-4">URL / Adres</th>
+                    <th class="px-6 py-4 text-center">Durum</th>
+                    <th class="px-6 py-4">Son Kontrol</th>
+                    <th sec:authorize="hasRole('ADMIN')" class="px-6 py-4 text-right">İşlemler</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 text-sm">
+                <tr th:each="task : ${tasks}" class="hover:bg-slate-800/30 transition-colors">
+                    <td class="px-6 py-4 font-mono text-slate-500" th:text="${task.id}">1</td>
+                    <td class="px-6 py-4 font-semibold text-slate-200" th:text="${task.title}">Google</td>
+                    <td class="px-6 py-4 text-slate-400">
+                        <a th:href="${task.description}" target="_blank" class="hover:underline" th:text="${task.description}">
+                            https://google.com
+                        </a>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                                <span th:if="${#strings.toString(task.status) == 'UP'}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> UP
+                                </span>
+                        <span th:if="${#strings.toString(task.status) == 'DOWN'}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> DOWN
+                                </span>
+                    </td>
+                    <td class="px-6 py-4 font-mono text-xs text-slate-400" th:text="${task.lastCheckedAt != null ? #temporals.format(task.lastCheckedAt, 'dd-MM-yyyy HH:mm:ss') : 'Henüz taranmadı'}">
+                        29-05-2026 23:05:00
+                    </td>
+
+                    <td sec:authorize="hasRole('ADMIN')" class="px-6 py-4 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-2">
+                            <button th:data-id="${task.id}" th:data-title="${task.title}" th:data-desc="${task.description}"
+                                    onclick="openEditModal(this.getAttribute('data-id'), this.getAttribute('data-title'), this.getAttribute('data-desc'))"
+                                    class="p-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button th:data-id="${task.id}" onclick="deleteTask(this.getAttribute('data-id'))"
+                                    class="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<div sec:authorize="hasRole('ADMIN')">
+
+    <div id="addModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-slate-100">Yeni Web Sitesi İzle</h3>
+                <button onclick="toggleModal('addModal')" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="addForm" onsubmit="submitAddForm(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Site Adı</label>
+                    <input type="text" name="title" required placeholder="Örn: GitHub" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">URL Adresi</label>
+                    <input type="url" name="description" required placeholder="https://github.com" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="toggleModal('addModal')" class="px-4 py-2 text-sm bg-slate-800 rounded-lg">İptal</button>
+                    <button type="submit" class="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-slate-100">Web Sitesini Güncelle</h3>
+                <button onclick="toggleModal('editModal')" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="editForm" class="space-y-4">
+                <input type="hidden" id="editId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Site Adı</label>
+                    <input type="text" id="editTitle" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">URL Adresi</label>
+                    <input type="url" id="editDescription" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="toggleModal('editModal')" class="px-4 py-2 text-sm bg-slate-800 rounded-lg">İptal</button>
+                    <button type="button" onclick="submitEditForm()" class="px-4 py-2 text-sm bg-amber-600 text-white rounded-lg">Güncelle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleModal(modalId) {
+        var modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.toggle('hidden');
+        }
+    }
+
+    function openEditModal(id, title, description) {
+        document.getElementById('editId').value = id;
+        document.getElementById('editTitle').value = title;
+        document.getElementById('editDescription').value = description;
+        toggleModal('editModal');
+    }
+
+function submitAddForm(event) {
+    event.preventDefault();
+
+    var form = document.getElementById('addForm');
+    var title = form.querySelector('input[name="title"]').value;
+    var description = form.querySelector('input[name="description"]').value;
+
+    fetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ title: title, description: description })
+    }).then(function(response) {
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert("Ekleme hatası! Yetkinizi veya verileri kontrol edin.");
+        }
+    }).catch(error => console.error("Hata:", error));
+}
+
+function submitEditForm() {
+    var id = document.getElementById('editId').value;
+    var title = document.getElementById('editTitle').value;
+    var description = document.getElementById('editDescription').value;
+
+    fetch('/api/tasks/' + id, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ title: title, description: description })
+    }).then(function(response) {
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert("Güncelleme hatası!");
+        }
+    }).catch(error => console.error("Hata:", error));
+}
+    function deleteTask(id) {
+    if (confirm("Bu web sitesini izleme listesinden silmek istediğinize emin misiniz?")) {
+        fetch('/api/tasks/' + id, {
+            method: 'DELETE',
+            credentials: 'include'
+        }).then(function(response) {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert("Silme hatası!");
+            }
+        });
+    }
+}
+</script>
+</body>
+</html>
