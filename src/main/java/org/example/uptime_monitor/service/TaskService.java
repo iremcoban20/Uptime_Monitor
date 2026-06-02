@@ -69,6 +69,17 @@ public class TaskService {
         return taskRepository.findTop5ByOrderByIdDesc();
     }
 
+    public List<Task> filterProjectsByTitleAndStatus(String title, String status) {
+        return taskRepository.findByTitleContainingIgnoreCaseAndStatus(title,status);
+    }
+    public long countProjectsByStatus(String status) {
+        return taskRepository.countByStatus(status);
+    }
+
+    public boolean existsProjectsByTitleIgnoreCase(String title) {
+        return taskRepository.existsByTitleIgnoreCase(title);
+    }
+
     // ==========================================
     // 3. UPDATE (Bilgileri Güncelleme)
     // ==========================================

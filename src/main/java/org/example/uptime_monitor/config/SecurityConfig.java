@@ -39,7 +39,7 @@ public class SecurityConfig {
                 // 4. Yetkilendirme Kuralları (Sıralama hocanın standartlarına uyarlandı)
                 .authorizeHttpRequests(auth -> auth
                         // Herkese açık kaynaklar ve statik dosyalar
-                        .requestMatchers("/api/hello", "/h2-console/**").permitAll()
+                        .requestMatchers("/api/hello").permitAll()
                         .requestMatchers("/error", "/login", "/css/**", "/js/**", "/static/**").permitAll()
 
                         // 🔍 OKUMA İŞLEMLERİ (GET): Hem USER hem ADMIN yapabilir (Hocanın kuralı)

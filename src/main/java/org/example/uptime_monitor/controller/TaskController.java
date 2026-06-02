@@ -56,6 +56,39 @@ public class TaskController {
         return ResponseEntity.ok("Web sitesi izleme kaydı başarıyla silindi. ID: " + id);
     }
 
+    @GetMapping("/status/{status}")
+    public List<Task> getProjectsByStatus(@PathVariable String status) {
+        return taskService.getProjectsByStatus(status);
+    }
+
+    @GetMapping("/search")
+    public List<Task> searchProjectsByTitle(@RequestParam String title) {
+        return taskService.searchProjectsByTitle(title);
+    }
+
+    @GetMapping("/latest")
+    public List<Task> getTop5RecentProjects() {
+        return taskService.getTop5RecentProjects();
+    }
+
+    @GetMapping("/filter")
+    public List<Task> filterProjects(
+            @RequestParam String title,
+            @RequestParam String status
+    ) {
+        return taskService.filterProjectsByTitleAndStatus(title,status);
+    }
+
+    @GetMapping("/count")
+    public long countProjectsByStatus(@RequestParam String status) {
+        return taskService.countProjectsByStatus(status);
+    }
+
+    @GetMapping("/exists")
+    public boolean existsTaskByTitle(@RequestParam String title) {
+        return taskService.existsProjectsByTitleIgnoreCase(title);
+    }
+
     // 9. MANUEL TETİKLEME - Tüm siteleri şimdi kontrol et düğmesi için
     @PostMapping("/check-all")
     public ResponseEntity<String> forceCheckAllWebsites() {
