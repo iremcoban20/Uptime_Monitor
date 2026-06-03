@@ -4,7 +4,7 @@ import org.example.uptime_monitor.service.TaskService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
-@Controller // DİKKAT: @RestController DEĞİL, normal @Controller kullanıyoruz!
+@Controller
 public class TaskViewController {
     private final TaskService taskService;
 
@@ -12,12 +12,12 @@ public class TaskViewController {
         this.taskService = taskService;
     }
 
-    @GetMapping("/") // Tarayıcıdan direkt ana sayfaya girildiğinde tetiklenecek
+    @GetMapping("/")
     public String index(org.springframework.ui.Model model) {
         // Veritabanındaki tüm siteleri çekip "tasks" ismiyle HTML şablonuna gönderiyoruz
         model.addAttribute("tasks", taskService.getAllProjects());
 
-        return "index"; // templates/index.html dosyasını ekrana bas demek
+        return "index";
     }
 
 

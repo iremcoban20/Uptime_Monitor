@@ -12,21 +12,21 @@ public class Task {
     private Long id;
 
     @Column(nullable = false)
-    private String title; // Sitenin adı (Örn: "Okul Otomasyonu")
+    private String title;
 
     @Column(nullable = false)
-    private String description; // İzlenecek sitenin tam URL'i (Örn: "https://www.google.com")
+    private String description;
 
     @Column(nullable = false)
-    private String status; // Sitenin durumu: "UP" veya "DOWN"
+    private String status;
 
-    private LocalDateTime lastCheckedAt; // En son ne zaman kontrol edildi?
+    private LocalDateTime lastCheckedAt;
 
-    // 1. Boş Constructor (JPA için zorunludur)
+
     public Task() {
     }
 
-    // 2. Parametreli Constructor (Yeni kayıt oluştururken kolaylık sağlar)
+
     public Task(Long Id,String title, String description, String status, LocalDateTime lastCheckedAt) {
         this.title = title;
         this.description = description;
@@ -34,7 +34,7 @@ public class Task {
         this.lastCheckedAt = lastCheckedAt;
     }
 
-    // 3. Getter ve Setter Metotları
+
     public Long getId() {
         return id;
     }

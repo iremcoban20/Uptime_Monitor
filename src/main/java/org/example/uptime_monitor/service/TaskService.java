@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional(readOnly = true) // 🎯 1. STRATEJİ: Varsayılan olarak tüm metotlar salt-okunur (Performans için)
+@Transactional(readOnly = true)
 public class TaskService {
 
     private final TaskRepository taskRepository;
@@ -24,13 +24,11 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    // ==========================================
-    // 1. CREATE (Yeni İzlenecek Web Sitesi Ekle)
-    // ==========================================
+
     @PreAuthorize("hasRole('ADMIN')")
-    @Transactional // 🎯 Yazma yetkisi verildi
+    @Transactional
     public Task createProject(TaskRequest request) {
-        // Aynı isimde sitenin mükerrer eklenmesini engellemek için kontrol
+
         if (taskRepository.existsByTitleIgnoreCase(request.getTitle())) {
             throw new RuntimeException("Bu isimde bir web sitesi zaten kayıtlı!");
         }
@@ -44,9 +42,7 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    // ==========================================
-    // 2. READ (Okuma ve Listeleme İşlemleri - Hepsi readOnly çalışır)
-    // ==========================================
+
 
     public List<Task> getAllProjects() {
         return taskRepository.findAll();
@@ -80,55 +76,49 @@ public class TaskService {
         return taskRepository.existsByTitleIgnoreCase(title);
     }
 
-    // ==========================================
-    // 3. UPDATE (Bilgileri Güncelleme)
-    // ==========================================
+
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public Task updateProject(Long id, TaskRequest request) {
-        // 1. Veritabanından veriyi Optional kutusu olarak çekiyoruz
+
         Optional<Task> optionalTask = taskRepository.findById(id);
 
-        // 2. Eğer kutunun içi doluysa (Yani bu ID ile bir web sitesi bulunmuşsa)
+
         if (optionalTask.isPresent()) {
-            // İŞTE SİHİRLİ SATIR: Kutunun içindeki gerçek Task nesnesini .get() ile çıkartıyoruz!
+
             Task existingTask = optionalTask.get();
 
-            // Artık existingTask'ı özgürce kullanabiliriz, IntelliJ asla kızmaz:
+
             existingTask.setTitle(request.getTitle());
             existingTask.setDescription(request.getDescription());
             existingTask.setStatus("PENDING");
             existingTask.setLastCheckedAt(java.time.LocalDateTime.now());
 
-            // Güncellenmiş nesneyi veritabanına geri kaydediyoruz
+
             return taskRepository.save(existingTask);
         } else {
-            // Eğer bu ID ile bir site bulunamadıysa bir hata fırlatıyoruz
+
             throw new RuntimeException("Güncellenecek web sitesi bulunamadı! ID: " + id);
         }
     }
 
 
-    // ==========================================
-    // 4. DELETE (Sistemden Kaldırma)
-    // ==========================================
+
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void deleteProject(Long id) {
-        // Veritabanında bu ID ile bir kayıt var mı kontrol ediyoruz
+
         if (taskRepository.existsById(id)) {
-            taskRepository.deleteById(id); // Varsa direkt ID üzerinden siliyoruz
+            taskRepository.deleteById(id);
         } else {
             throw new RuntimeException("Silinecek web sitesi bulunamadı! ID: " + id);
         }
     }
 
 
-    // ==========================================
-    // UPTIME MONITOR ÖZEL OPERASYONLARI (PING)
-    // ==========================================
 
-    @Transactional // 🎯 Durum değiştiği için veritabanına yazma yetkisi şart
+
+    @Transactional
     public void checkUrlStatus(Task task) {
         try {
             URL url = new URL(task.getDescription());
@@ -152,18 +142,21 @@ public class TaskService {
         }
     }
 
-    @Transactional // 🎯 Döngü içinde toplu güncelleme yaptığı için transaction şart
+    @Transactional
     public void checkAllWebsites() {
         List<Task> tasks = taskRepository.findAll();
         for (Task task : tasks) {
+
+
+            System.out.println(task.getTitle() + " için son kontrol zamanı: " + task.getLastCheckedAt());
+
             checkUrlStatus(task);
+            task.setLastCheckedAt(LocalDateTime.now());
         }
+        taskRepository.saveAll(tasks);
     }
 
-    // ==========================================
-    // 🎯 HOCANIN ROLLBACK TEST METODU (Uptime Sürümü)
-    // ==========================================
-    @Transactional // 🎯 Hata anında ROLLBACK tetikleyecek metot
+
     public Task createProjectWithRollbackTest(TaskRequest request) {
         Task task = new Task();
         task.setTitle(request.getTitle());
@@ -171,10 +164,10 @@ public class TaskService {
         task.setStatus("PENDING");
         task.setLastCheckedAt(LocalDateTime.now());
 
-        // Veri belleğe/veritabanına gönderiliyor gibi yapılır
+
         Task savedTask = taskRepository.save(task);
 
-        // Hoca sunumda "Bakın şimdi rollback olacak" dediği yer:
+
         if (true) {
             throw new RuntimeException("Rollback testi için bilinçli hata oluşturuldu.");
         }

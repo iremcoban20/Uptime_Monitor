@@ -19,37 +19,35 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    // 1. CREATE - Yeni Web Sitesi Ekle
-    // @Valid anotasyonu DTO'daki Validation kurallarını tetikler (@NotBlank, @Pattern vb.)
+
     @PostMapping
     public ResponseEntity<Task> createProject(@Valid @RequestBody TaskRequest request) {
         Task createdTask = taskService.createProject(request);
         return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
     }
 
-    // 2. READ - Tüm Siteleri Listele
+
     @GetMapping
     public ResponseEntity<List<Task>> getAllProjects() {
         return ResponseEntity.ok(taskService.getAllProjects());
     }
 
-    // 3. READ - ID'ye Göre Tek Bir Site Getir
+
     @GetMapping("/{id}")
     public ResponseEntity<Task> getProjectById(@PathVariable Long id) {
         return taskService.getProjectById(id)
-                .map(ResponseEntity::ok) // Lambda yerine Method Reference kullandık, mavi çizgi de bitti!
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
 
 
-    // 7. UPDATE - Site Bilgilerini Güncelle
+
     @PutMapping("/{id}")
     public ResponseEntity<Task> updateProject(@PathVariable Long id, @Valid @RequestBody TaskRequest request) {
         return ResponseEntity.ok(taskService.updateProject(id, request));
     }
 
-    // 8. DELETE - Siteyi Sistemden Sil
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteProject(@PathVariable Long id) {
         taskService.deleteProject(id);
@@ -89,7 +87,7 @@ public class TaskController {
         return taskService.existsProjectsByTitleIgnoreCase(title);
     }
 
-    // 9. MANUEL TETİKLEME - Tüm siteleri şimdi kontrol et düğmesi için
+
     @PostMapping("/check-all")
     public ResponseEntity<String> forceCheckAllWebsites() {
         taskService.checkAllWebsites();
@@ -98,7 +96,6 @@ public class TaskController {
 
     @PostMapping("/rollback-test")
     public ResponseEntity<Task> testRollback(@RequestBody TaskRequest request) {
-        // Servis katmanındaki o az önce yazdığımız test metodunu çağırıyoruz
         Task savedTask = taskService.createProjectWithRollbackTest(request);
         return ResponseEntity.ok(savedTask);
     }

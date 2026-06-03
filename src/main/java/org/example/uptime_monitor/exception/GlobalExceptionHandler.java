@@ -11,10 +11,10 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestControllerAdvice // Bu anotasyon tüm controller sınıflarındaki hataları dinlemesini sağlar
+@RestControllerAdvice
 
 public class GlobalExceptionHandler {
-    // 1. GENEL HATALARI YAKALAMA (Örn: RuntimeException - "Bu isimde bir web sitesi zaten kayıtlı!" uyarısı için)
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException exception) {
         Map<String, Object> errors = new HashMap<>();
@@ -25,15 +25,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 
-    // 2. VALIDATION (DOĞRULAMA) HATALARINI YAKALAMA
-    // DTO'da yazdığımız @NotBlank veya @Pattern kurallarına uyulmazsa bu metot devreye girer
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException exception) {
         Map<String, Object> errors = new HashMap<>();
         errors.put("timestamp", LocalDateTime.now());
         errors.put("status", HttpStatus.BAD_REQUEST.value());
 
-        // Hangi alanda ne hatası olduğunu tek tek listeliyoruz
+
         Map<String, String> validationDetails = new HashMap<>();
         exception.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
@@ -46,7 +45,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 
-    // 3. SİSTEMSEL VE ÖNGÖRÜLEMEYEN DİĞER TÜM HATALAR İÇİN (Erişim reddi, null pointer vb.)
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneralException(Exception exception) {
         Map<String, Object> errors = new HashMap<>();

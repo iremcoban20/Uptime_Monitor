@@ -10,22 +10,21 @@ public class TaskRequest {
     private String title;
 
     @NotBlank(message = "İzlenecek sitenin URL adresi boş bırakılamaz.")
-    // Basit bir Regex ile girilen metnin http:// veya https:// ile başlamasını zorunlu kılıyoruz
     @Pattern(regexp = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]",
             message = "Lütfen geçerli bir URL adresi giriniz (Örn: https://google.com).")
     private String description;
 
-    // 1. Boş Constructor
+
     public TaskRequest() {
     }
 
-    // 2. Parametreli Constructor
+
     public TaskRequest(String title, String description) {
         this.title = title;
         this.description = description;
     }
 
-    // 3. Getter ve Setter Metotları
+
     public String getTitle() {
         return title;
     }
