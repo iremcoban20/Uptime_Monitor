@@ -26,46 +26,39 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception { // throws Exception eklemeyi unutma
         http
-
                 .csrf(AbstractHttpConfigurer::disable)
-
 
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
 
-
                 .authorizeHttpRequests(auth -> auth
-                        // Herkese açık kaynaklar ve statik dosyalar
+                        // login endpoint'ine ve statik dosyalara herkese açık izin veriyoruz
                         .requestMatchers("/error", "/login", "/css/**", "/js/**", "/static/**").permitAll()
 
-
                         .requestMatchers(HttpMethod.GET, "/api/tasks/**").hasAnyRole("USER", "ADMIN")
-
-
                         .requestMatchers(HttpMethod.POST, "/api/tasks/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/tasks/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/tasks/**").hasRole("ADMIN")
 
-
                         .requestMatchers("/").authenticated()
-
-
                         .anyRequest().authenticated()
                 )
 
+                // Kaldırıldı: .httpBasic() satırını siliyoruz çünkü tarayıcıda çirkin pop-up'lar çıkartabilir.
 
-                .httpBasic(Customizer.withDefaults())
-
+                // Kendi login sayfamızı buraya entegre ediyoruz:
                 .formLogin(form -> form
-                        .defaultSuccessUrl("/", true)
+                        .loginPage("/login")           // Gitmesini istediğimiz bizim controller endpoint'imiz
+                        .loginProcessingUrl("/login")  // Spring'in giriş isteklerini yakalayacağı POST adresi
+                        .defaultSuccessUrl("/", true)  // Başarılı girişte anasayfaya yönlendir
                         .permitAll()
                 )
 
-
                 .logout(logout -> logout
+                        .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
                 );

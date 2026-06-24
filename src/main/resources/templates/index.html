@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +14,8 @@
 </head>
 <body class="font-sans antialiased">
 
+<div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-3 pointer-events-none"></div>
+
 <nav class="card-bg border-b border-gray-800 px-6 py-4 flex justify-between items-center">
     <div class="flex items-center space-x-3">
         <div class="bg-emerald-500 text-white p-2 rounded-lg">
@@ -25,7 +27,7 @@
     <div class="flex items-center space-x-4">
         <span class="text-sm font-semibold">Kullanıcı: <span id="current-username" class="text-emerald-400 font-mono"></span></span>
         <span class="text-xs text-gray-400">Rol: <span id="current-role" class="text-yellow-400 font-mono"></span></span>
-        <button onclick="handleLogout()" class="bg-gray-800 hover:bg-gray-700 text-sm px-4 py-2 rounded-lg transition flex items-center space-x-2">
+        <button id="logout-trigger-btn" class="bg-gray-800 hover:bg-gray-700 text-sm px-4 py-2 rounded-lg transition flex items-center space-x-2">
             <i class="fas fa-sign-out-alt"></i> <span>Çıkış</span>
         </button>
     </div>
@@ -105,6 +107,32 @@
             </tr>
             </thead>
             <tbody id="task-table-body" class="divide-y divide-gray-800/50 text-sm text-gray-300">
+            <tr th:each="task : ${tasks}" class="hover:bg-[#132244]/40 transition group">
+                <td class="py-4 px-6 font-mono text-gray-500" th:text="${task.id}">1</td>
+                <td class="py-4 px-6 font-semibold text-white" th:text="${task.title != null ? task.title : task.name}">Site Adı</td>
+                <td class="py-4 px-6 font-mono text-xs text-gray-400 hover:text-emerald-400 transition cursor-pointer" th:text="${task.description != null ? task.description : task.url}">URL</td>
+                <td class="py-4 px-6">
+                        <span th:if="${task.status == 'UP'}" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>• UP
+                        </span>
+                    <span th:if="${task.status == 'DOWN'}" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-950 text-rose-400 border border-rose-800/60">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mr-1.5"></span>• DOWN
+                        </span>
+                    <span th:if="${task.status != 'UP' && task.status != 'DOWN'}" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-950 text-amber-400 border border-amber-800/60">
+                            PENDING
+                        </span>
+                </td>
+                <td class="py-4 px-6 text-xs text-gray-400 font-medium" th:text="${task.lastChecked != null ? #dates.format(task.lastChecked, 'dd-MM-yyyy HH:mm:ss') : 'Henüz Kontrol Edilmedi'}">Tarih</td>
+                <td class="py-4 px-6 text-center">
+                    <div class="flex justify-center space-x-2.5">
+                        <button th:onclick="'editTask(' + ${task.id} + ')'" class="text-amber-400 hover:text-amber-300 p-1.5 rounded transition"><i class="fas fa-edit"></i></button>
+                        <button th:onclick="'deleteTask(' + ${task.id} + ')'" class="text-rose-500 hover:text-rose-400 p-1.5 rounded transition"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(tasks)}">
+                <td colspan="6" class="py-8 text-center text-gray-500 font-medium">Kayıtlı izleme verisi bulunmamaktadır.</td>
+            </tr>
             </tbody>
         </table>
     </div>
@@ -134,15 +162,68 @@
     </div>
 </div>
 
+<div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="w-full max-w-sm rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl">
+        <div class="flex items-center space-x-3 mb-4">
+            <div class="p-3 bg-rose-500/10 text-rose-400 rounded-2xl border border-rose-500/20">
+                <i class="fas fa-trash-alt text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-100">Kaydı Sil</h3>
+                <p class="text-sm text-gray-400">Bu işlem geri alınamaz.</p>
+            </div>
+        </div>
+        <p class="text-gray-300 text-sm mb-6 leading-relaxed">
+            Bu web sitesi izleme kaydını sistemden tamamen silmek istediğinize emin misiniz?
+        </p>
+        <div class="flex space-x-3">
+            <button id="cancelDeleteBtn" class="flex-1 rounded-2xl border border-slate-700 bg-slate-950 py-3 text-sm font-semibold text-slate-300 hover:bg-slate-900 transition">
+                İptal
+            </button>
+            <button id="confirmDeleteBtn" class="flex-1 rounded-2xl bg-rose-600 py-3 text-sm font-bold text-white hover:bg-rose-500 transition shadow-lg shadow-rose-950/30">
+                Evet, Sil
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="logoutModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+    <div class="w-full max-w-sm rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl transform scale-95 transition-all">
+        <div class="flex items-center space-x-3 mb-4">
+            <div class="p-3 bg-rose-500/10 text-rose-400 rounded-2xl border border-rose-500/20">
+                <i class="fas fa-sign-out-alt text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-100">Güvenli Çıkış</h3>
+                <p class="text-sm text-slate-400">Oturumu kapatmak üzeresiniz.</p>
+            </div>
+        </div>
+
+        <p class="text-slate-300 text-sm mb-6 leading-relaxed">
+            Çıkış yapmak istediğinize emin misiniz? Mevcut oturumunuz sonlandırılacaktır.
+        </p>
+
+        <div class="flex space-x-3">
+            <button id="cancelLogoutBtn" class="flex-1 rounded-2xl border border-slate-700 bg-slate-950 py-3 text-sm font-semibold text-slate-300 hover:bg-slate-900 transition">
+                İptal
+            </button>
+            <button id="confirmLogoutBtn" class="flex-1 rounded-2xl bg-rose-500 py-3 text-sm font-bold text-slate-950 hover:bg-rose-400 transition shadow-lg shadow-rose-950/30">
+                Çıkış Yap
+            </button>
+        </div>
+    </div>
+</div>
+
 <script th:inline="none">
     var API_BASE_URL = 'http://localhost:8080/api/tasks';
     var isEditMode = false;
     var currentEditId = null;
+    var pendingDeleteId = null; // Silinecek ID'yi hafızada tutmak için
 
     document.addEventListener('DOMContentLoaded', function() {
         displayUser();
         fetchCounts();
-        fetchTasks();
+        setupCustomModals(); // Özel modal olaylarını bağlıyoruz
 
         setInterval(function() {
             var searchInput = document.getElementById('search-title').value.trim();
@@ -152,33 +233,89 @@
             }
         }, 10000);
     });
-    function displayUser() {
-    var savedUser = localStorage.getItem('username');
-    var savedRole = localStorage.getItem('role');
 
-    if (savedUser) {
-        document.getElementById('current-username').innerText = savedUser.toUpperCase();
-    } else {
-        document.getElementById('current-username').innerText = 'USER';
-    }
+    // Profesyonel Sağ Üst Bildirim (Toast) Mesajı Fonksiyonu
+    function showToast(message, type = 'success') {
+        var container = document.getElementById('toast-container');
+        var toast = document.createElement('div');
+        toast.className = 'pointer-events-auto flex items-center space-x-3 px-4 py-3 rounded-2xl border text-sm font-semibold shadow-2xl transform translate-x-12 opacity-0 transition-all duration-300';
 
-
-    if (document.getElementById('current-role')) {
-        if (savedRole) {
-            document.getElementById('current-role').innerText = savedRole.toUpperCase();
+        if(type === 'success') {
+            toast.className += ' bg-emerald-950/90 text-emerald-400 border-emerald-800';
+            toast.innerHTML = '<i class="fas fa-check-circle"></i><span>' + message + '</span>';
         } else {
-            document.getElementById('current-role').innerText = 'USER';
+            toast.className += ' bg-rose-950/90 text-rose-400 border-rose-800';
+            toast.innerHTML = '<i class="fas fa-exclamation-circle"></i><span>' + message + '</span>';
         }
+
+        container.appendChild(toast);
+        setTimeout(() => { toast.classList.remove('translate-x-12', 'opacity-0'); }, 10);
+        setTimeout(() => {
+            toast.classList.add('translate-x-12', 'opacity-0');
+            setTimeout(() => { toast.remove(); }, 300);
+        }, 3500);
     }
-}
 
-
-
-    function handleLogout() {
-        if (confirm('Çıkış yapmak istediğinize emin misiniz?')) {
+    // Modal ve Buton Dinleyicilerini Kurma Fonksiyonu
+    function setupCustomModals() {
+        // Çıkış Tetikleme
+        document.getElementById('logout-trigger-btn').addEventListener('click', function() {
+            document.getElementById('logoutModal').classList.remove('hidden');
+        });
+        document.getElementById('cancelLogoutBtn').addEventListener('click', function() {
+            document.getElementById('logoutModal').classList.add('hidden');
+        });
+        document.getElementById('confirmLogoutBtn').addEventListener('click', function() {
             localStorage.removeItem('username');
             localStorage.removeItem('role');
             window.location.href = '/login';
+        });
+
+        // Silme İptal Mekanizması
+        document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
+            document.getElementById('deleteModal').classList.add('hidden');
+            pendingDeleteId = null;
+        });
+
+        // Silme Onay Mekanizması
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+            if (pendingDeleteId !== null) {
+                try {
+                    var res = await fetch(API_BASE_URL + '/' + pendingDeleteId, { method: 'DELETE' });
+                    if(res.ok) {
+                        document.getElementById('deleteModal').classList.add('hidden');
+                        showToast("Web sitesi izleme kaydı başarıyla silindi.", "success");
+                        fetchCounts();
+                        fetchTasks();
+                    } else {
+                        showToast("Silme işlemi başarısız oldu.", "error");
+                    }
+                } catch(err) {
+                    console.error(err);
+                    showToast("Sunucuyla bağlantı kurulamadı.", "error");
+                } finally {
+                    pendingDeleteId = null;
+                }
+            }
+        });
+    }
+
+    function displayUser() {
+        var savedUser = localStorage.getItem('username');
+        var savedRole = localStorage.getItem('role');
+
+        if (savedUser) {
+            document.getElementById('current-username').innerText = savedUser.toUpperCase();
+        } else {
+            document.getElementById('current-username').innerText = 'USER';
+        }
+
+        if (document.getElementById('current-role')) {
+            if (savedRole) {
+                document.getElementById('current-role').innerText = savedRole.toUpperCase();
+            } else {
+                document.getElementById('current-role').innerText = 'USER';
+            }
         }
     }
 
@@ -238,7 +375,7 @@
 
                 var itemTitle = task.title ? task.title : (task.name ? task.name : 'İsimsiz Görev');
                 var displayUrl = task.description ? task.description : (task.url ? task.url : '');
-                var checkDate = task.lastChecked ? new Date(task.lastChecked).toLocaleString('tr-TR') : '01-06-2026 09:28:39';
+                var checkDate = task.lastChecked ? new Date(task.lastChecked).toLocaleString('tr-TR') : 'Henüz Kontrol Edilmedi';
 
                 var rowHtml = '<tr class="hover:bg-[#132244]/40 transition group">' +
                     '<td class="py-4 px-6 font-mono text-gray-500">' + task.id + '</td>' +
@@ -280,7 +417,7 @@
             document.getElementById('add-modal').classList.remove('hidden');
         } catch (err) {
             console.error(err);
-            alert("Kayıt detayları getirilirken hata oluştu.");
+            showToast("Kayıt detayları getirilirken hata oluştu.", "error");
         }
     }
 
@@ -305,10 +442,11 @@
 
                 if (response.ok) {
                     closeModal();
+                    showToast("İzleme kaydı başarıyla güncellendi.", "success");
                     await fetchCounts();
                     await fetchTasks();
                 } else {
-                    alert("Güncelleme başarısız oldu.");
+                    showToast("Güncelleme başarısız oldu.", "error");
                 }
                 return;
             }
@@ -335,12 +473,13 @@
 
             if (response.ok) {
                 closeModal();
+                showToast("Yeni web sitesi izleme listesine başarıyla eklendi.", "success");
                 await fetchCounts();
                 await fetchTasks();
             }
         } catch (err) {
             console.error(err);
-            alert("İşlem gerçekleştirilemedi.");
+            showToast("İşlem gerçekleştirilemedi.", "error");
         }
     }
 
@@ -356,12 +495,12 @@
         try {
             var response = await fetch(API_BASE_URL + '/check-all', { method: 'POST' });
             if (response.ok) {
-                alert("Tüm web sitelerinin aktiflik durumları anlık olarak kontrol edildi!");
+                showToast("Tüm web sitelerinin durumları anlık olarak kontrol edildi!", "success");
                 await fetchCounts();
                 await fetchTasks();
             }
         } catch (err) {
-            alert("Manuel tetikleme sırasında sunucu hatası oluştu.");
+            showToast("Manuel tetikleme sırasında sunucu hatası oluştu.", "error");
         } finally {
             syncIcon.classList.remove('animate-spin');
             syncText.innerText = 'Sistemleri Şimdi Tetikle';
@@ -369,18 +508,10 @@
         }
     }
 
-    async function deleteTask(id) {
-        if(confirm('Bu web sitesi izleme kaydını silmek istediğinize emin misiniz?')) {
-            try {
-                var res = await fetch(API_BASE_URL + '/' + id, { method: 'DELETE' });
-                if(res.ok) {
-                    fetchCounts();
-                    fetchTasks();
-                }
-            } catch(err) {
-                console.error(err);
-            }
-        }
+    // Eski confirm() yapısı kaldırıldı, modern modal ve state yönetimine geçirildi
+    function deleteTask(id) {
+        pendingDeleteId = id; // Silinecek ID kaydedilir
+        document.getElementById('deleteModal').classList.remove('hidden'); // Özel modal açılır
     }
 
     function openModal() {

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uptime Monitor - Giriş</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4">
+
+<div class="w-full max-w-md rounded-3xl bg-slate-900/95 border border-slate-800 p-8 shadow-2xl">
+    <h1 class="text-3xl font-bold mb-3 text-emerald-400 tracking-tight">Uptime Monitor</h1>
+    <p class="text-slate-400 mb-7">Admin veya kullanıcı olarak giriş yapın.</p>
+
+    <form id="loginForm" th:action="@{/login}" method="POST">
+
+        <div th:if="${param.error}" class="mb-5 text-sm font-semibold text-rose-400 p-3.5 bg-rose-950/40 border border-rose-900/60 rounded-2xl flex items-center space-x-2">
+            <i class="fas fa-exclamation-circle text-base"></i>
+            <span>Kullanıcı adı veya şifre hatalı!</span>
+        </div>
+
+        <div th:if="${param.logout}" class="mb-5 text-sm font-semibold text-emerald-400 p-3.5 bg-emerald-950/40 border border-emerald-900/60 rounded-2xl flex items-center space-x-2">
+            <i class="fas fa-check-circle text-base"></i>
+            <span>Başarıyla çıkış yapıldı.</span>
+        </div>
+
+        <label class="block mb-4">
+            <span class="text-sm text-slate-400 font-medium">Kullanıcı adı</span>
+            <input id="username" name="username" type="text" required
+                   class="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition"
+                   placeholder="Kullanıcı adı">
+        </label>
+
+        <label class="block mb-4">
+            <span class="text-sm text-slate-400 font-medium">Şifre</span>
+            <input id="password" name="password" type="password" required
+                   class="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition"
+                   placeholder="Şifre">
+        </label>
+
+        <label class="block mb-6">
+            <span class="text-sm text-slate-400 font-medium">Rol</span>
+            <select id="role" class="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-300 focus:outline-none focus:border-emerald-500 transition">
+                <option value="user">Kullanıcı</option>
+                <option value="admin">Admin</option>
+            </select>
+        </label>
+
+        <button type="submit" id="loginButton" class="w-full rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-emerald-400 transition shadow-lg shadow-emerald-950/20">
+            Giriş Yap
+        </button>
+    </form>
+</div>
+
+<script th:inline="none">
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+        var usernameInput = document.getElementById('username').value.trim();
+        var roleInput = document.getElementById('role').value;
+
+        if (!usernameInput) {
+            alert('Lütfen kullanıcı adı alanını boş bırakmayın.');
+            event.preventDefault(); // Formun gitmesini engelle
+            return;
+        }
+
+        // Sadece arayüzde (index.html'de) "Hoş geldin admin" yazmak için localstorage'a kaydediyoruz
+        localStorage.setItem('username', usernameInput);
+        localStorage.setItem('role', roleInput);
+
+        // Form kendi kendine submit olacak ve Spring Security işini bitirince bizi otomatik "/" adresine yani index'e atacak.
+    }); // <-- UNUTULAN PARANTEZ VE SÜSLÜ PARANTEZ BURAYA EKLENDİ!
+</script>
+
+</body>
+</html>
