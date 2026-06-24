@@ -1,6 +1,6 @@
 ## 📸 Uygulama İçi Görseller
-![Giriş Ekranı](ekran_goruntusu_login.png)
-![Ana Panel](ekran_goruntusu_dashboard.png)
+![Giriş Ekranı](ekran_goruntusu_login2.png)
+![Ana Panel](ekran_goruntusu_dashboard2.png)
 
 # 🌐 Uptime & Performance Monitor
 
